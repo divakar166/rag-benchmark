@@ -1,0 +1,52 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag_qdrant
+    ports:
+      - "6333:6333" # REST API
+      - "6334:6334" # gRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__LOG_LEVEL=INFO
+    restart: unless-stopped
+
+  embedding-api:
+    build:
+      context: ./embedding-api
+      dockerfile: Dockerfile
+    container_name: rag_embedding_api
+    ports:
+      - "8001:8001"
+    environment:
+      - EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+      - HF_TOKEN=${HF_TOKEN}
+    volumes:
+      - embedding_cache:/root/.cache
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - EMBEDDING_HOST=http://embedding-api:8001
+      - EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+    env_file:
+      - .env
+    depends_on:
+      - qdrant
+      - embedding-api
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:
+  embedding_cache:

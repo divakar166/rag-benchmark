@@ -1,0 +1,45 @@
+# Core
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+
+# Vector DB
+qdrant-client
+
+# PDF Processing
+pypdf
+pdfplumber
+
+openai
+tiktoken
+
+# Chunking / NLP
+sentence-transformers
+nltk
+spacy
+
+# Hybrid Search (BM25) - Phase 2
+rank-bm25
+
+# Evaluation - Phase 3
+ragas
+datasets
+
+# Utilities
+python-dotenv
+numpy
+pandas
+httpx
+tenacity
+loguru
+tqdm
+
+# UI
+streamlit
+plotly
+
+rank-bm25
+nltk
+numpy

@@ -1,0 +1,42 @@
+[
+  {
+    "question": "What is the Python Data Model?",
+    "ground_truth": "The Python Data Model is the API that allows users to make their own objects play well with the most idiomatic language features. It formalizes the interfaces of the building blocks of the language itself, such as sequences, functions, iterators, coroutines, classes, and context managers. It is also referred to as the Python object model by some authors."
+  },
+  {
+    "question": "What are special methods in Python and what is their naming convention?",
+    "ground_truth": "Special methods in Python are methods with names that begin and end with two underscores, such as __getitem__ or __len__. They are also called dunder methods (short for double underscore). These methods are meant to be called by the Python interpreter rather than directly by the user."
+  },
+  {
+    "question": "How does the Python interpreter use the __len__ and __getitem__ methods?",
+    "ground_truth": "When Python evaluates len(obj), it calls obj.__len__(). When using square bracket notation like obj[index], Python calls obj.__getitem__(index). These special methods allow user-defined objects to behave like built-in sequences and support operations like iteration and slicing."
+  },
+  {
+    "question": "What is the benefit of implementing special methods in a custom class?",
+    "ground_truth": "Implementing special methods in a custom class allows it to integrate with core Python language features and standard library functions. For example, implementing __len__ and __getitem__ allows a class to support iteration, slicing, random selection with random.choice, and work naturally with for loops without any extra code."
+  },
+  {
+    "question": "What is the difference between len() and calling __len__ directly?",
+    "ground_truth": "You should not call special methods like __len__ directly. Instead, use the built-in function len(). The Python interpreter calls __len__ internally when you call len(). For built-in types like list, str, and bytearray, CPython reads the length directly from a C struct field, making it very fast without calling any method."
+  },
+  {
+    "question": "How does Python support string representation of objects?",
+    "ground_truth": "Python uses the __repr__ special method to get a string representation of an object for inspection. The __str__ method is used by the str() built-in and implicitly by the print function. If __str__ is not defined, Python falls back to __repr__. The representation returned by __repr__ should be unambiguous and ideally look like valid Python code to recreate the object."
+  },
+  {
+    "question": "What is operator overloading and how is it implemented in Python?",
+    "ground_truth": "Operator overloading in Python is implemented through special methods that correspond to operators. For example, __add__ implements the + operator and __mul__ implements the * operator. By implementing these methods, custom objects can support arithmetic and other operators. Python calls these methods when the corresponding operator is used with the object."
+  },
+  {
+    "question": "What does the __bool__ method do in Python?",
+    "ground_truth": "The __bool__ method determines the truthiness of an object. When Python evaluates bool(obj), it calls obj.__bool__(). If __bool__ is not defined, Python tries __len__ and considers the object falsy if it returns zero. If neither is defined, the object is always considered truthy."
+  },
+  {
+    "question": "What is the Python object model and why is the term 'data model' used in Fluent Python?",
+    "ground_truth": "The Python object model refers to the properties of objects in general in the Python programming language. The term 'data model' is used in Fluent Python because it is the title of the chapter in The Python Language Reference that is most relevant to the discussion. Some authors use the term 'object model' instead."
+  },
+  {
+    "question": "What is the Collection interface in Python and what methods does it require?",
+    "ground_truth": "The Collection interface in Python is an ABC (Abstract Base Class) that inherits from Sized, Iterable, and Container. It requires the implementation of three special methods: __len__ for the Sized interface, __iter__ for the Iterable interface, and __contains__ for the Container interface. Together these form the essential interface for collection types in Python."
+  }
+]
