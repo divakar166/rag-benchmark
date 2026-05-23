@@ -1,5 +1,5 @@
 """
-Benchmark Runner — Phase 3 CLI.
+Benchmark Runner
 
 Run from the project root:
     uv run python -m core.evaluation.benchmark_runner --strategies naive

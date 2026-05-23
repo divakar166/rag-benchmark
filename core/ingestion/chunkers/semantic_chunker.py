@@ -1,13 +1,12 @@
 """
-Semantic Chunker — Strategy 2.
+Semantic Chunker
 
 How it works:
   1. Split each page into sentences (using nltk)
   2. Embed ALL sentences in one batched call to embedding-api
   3. Compute cosine similarity between consecutive sentence embeddings
   4. When similarity drops below `breakpoint_threshold` → topic boundary → split here
-  5. Accumulate sentences into a chunk until a boundary is hit or
-     the chunk exceeds `max_chunk_tokens`
+  5. Accumulate sentences into a chunk until a boundary is hit or the chunk exceeds `max_chunk_tokens`
 
 Why it beats Naive:
   - Chunks never cut mid-thought — they end at natural topic transitions
@@ -86,7 +85,6 @@ class SemanticChunker(BaseChunker):
 
     async def chunk(self, pages: list[PageDoc]) -> list[Chunk]:
         """
-        Async — pipeline.py calls this with `await chunker.chunk(pages)`.
         Batches sentence embedding per page to the embedding-api service.
         """
         chunks: list[Chunk] = []

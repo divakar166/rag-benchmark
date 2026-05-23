@@ -23,7 +23,6 @@ STRATEGY_META = {
 # Page config 
 st.set_page_config(
     page_title="RAG Benchmark",
-    page_icon="⚗️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -279,8 +278,7 @@ with st.sidebar:
     st.markdown(status_html, unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Settings</div>', unsafe_allow_html=True)
-    top_k = st.slider("Top-K chunks", min_value=1, max_value=10, value=5,
-                       help="Number of chunks retrieved per query")
+    top_k = st.slider("Top-K chunks", min_value=1, max_value=10, value=5, help="Number of chunks retrieved per query")
 
     # Collection status
     st.markdown('<div class="section-label">Collections</div>', unsafe_allow_html=True)
@@ -310,10 +308,6 @@ with st.sidebar:
                         f"<span style='color:#64748b;'>{label} — empty</span>", 
                         unsafe_allow_html=True
                     )
-
-    # st.markdown('<div class="section-label">Strategy Guide</div>', unsafe_allow_html=True)
-    # for name, meta in STRATEGY_META.items():
-    #     st.caption(f"{meta['icon']} **{meta['label']}**")
 
 
 #  Header 
@@ -399,7 +393,7 @@ with tab_query:
                 )
                 st.plotly_chart(lat_fig, width='stretch')
 
-            #  Retrieval score radar (multi-strategy only) 
+            # Retrieval score radar (multi-strategy only) 
             if len(results) > 1:
                 st.markdown('<div class="section-label">Top retrieval score per strategy</div>',
                             unsafe_allow_html=True)
@@ -430,7 +424,7 @@ with tab_query:
                 )
                 st.plotly_chart(score_fig, width='stretch')
 
-            #  Side-by-side answer cards 
+            # Side-by-side answer cards 
             st.markdown('<div class="section-label">Answers</div>', unsafe_allow_html=True)
 
             n = len(results)
@@ -516,14 +510,13 @@ with tab_query:
 
 # TAB 2 — INGEST
 with tab_ingest:
-    st.markdown('<div class="section-label">Upload & ingest a PDF</div>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Upload & ingest a PDF</div>', unsafe_allow_html=True)
 
     st.info(
         "Each strategy gets its own Qdrant collection. "
         "Run **all** to ingest once for every strategy — "
         "takes ~2-5 minutes for a chapter-sized PDF.",
-        icon="ℹ",
+        icon="ℹ️",
     )
 
     uploaded = st.file_uploader("Choose a PDF", type=["pdf"])
@@ -544,7 +537,7 @@ with tab_ingest:
     with col_c:
         st.markdown("<br>", unsafe_allow_html=True)
         ingest_btn = st.button(
-            "🚀 Ingest",
+            "Ingest",
             type="primary",
             width='stretch',
             disabled=not online or uploaded is None,
@@ -565,34 +558,29 @@ with tab_ingest:
         if status != 200 or data is None:
             st.error(f"Ingestion failed: {data.get('detail', 'Unknown') if data else 'No response'}")
         else:
-            st.success(f"✅ Ingested **{uploaded.name}** successfully")
+            st.success(f"Ingested **{uploaded.name}** successfully")
             summaries = data.get("summaries", [])
 
             for summary in summaries:
                 strategy = summary.get("strategy", "?")
                 meta = STRATEGY_META.get(strategy, {})
-                icon = meta.get("icon", "⬜")
                 label = meta.get("label", strategy)
 
-                with st.expander(f"{icon} {label}", expanded=True):
+                with st.expander(f"{label}", expanded=True):
                     if "note" in summary:
                         st.info(summary["note"])
                         continue
 
                     c1, c2, c3, c4 = st.columns(4)
                     c1.metric("Pages", summary.get("pages_loaded", "—"))
-                    c2.metric("Chunks", summary.get("chunks_created",
-                                summary.get("parent_chunks", "—")))
+                    c2.metric("Chunks", summary.get("chunks_created", summary.get("parent_chunks", "—")))
                     c3.metric("Vectors", summary.get("vectors_stored", "—"))
-                    c4.metric("Collection",
-                              summary.get("collection",
-                                          str(summary.get("collections", "—"))))
+                    c4.metric("Collection", summary.get("collection", str(summary.get("collections", "—"))))
 
 
 # TAB 3 — EVALUATION RESULTS
 with tab_eval:
-    st.markdown('<div class="section-label">RAGAS evaluation results</div>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-label">RAGAS evaluation results</div>', unsafe_allow_html=True)
 
     eval_data = load_latest_eval()
 
@@ -608,7 +596,7 @@ with tab_eval:
 
         st.caption(f"Results from `{ts}` · question set: `{q_set}` · top-k: {top_k_used}")
 
-        #  RAGAS score overview table 
+        # RAGAS score overview table 
         METRICS = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
         METRIC_LABELS = {
             "faithfulness":      "Faithfulness",
@@ -632,9 +620,8 @@ with tab_eval:
         # Sort by faithfulness
         rows.sort(key=lambda x: x[1].get("Faithfulness") or 0, reverse=True)
 
-        #  Radar / grouped bar chart 
-        st.markdown('<div class="section-label">Score comparison</div>',
-                    unsafe_allow_html=True)
+        # Radar / grouped bar chart 
+        st.markdown('<div class="section-label">Score comparison</div>', unsafe_allow_html=True)
 
         has_scores = any(
             r[1].get("Faithfulness") is not None
@@ -673,7 +660,7 @@ with tab_eval:
         else:
             st.info("Scores are N/A — run evaluation with a working RAGAS setup first.")
 
-        #  Per-strategy score cards 
+        # Per-strategy score cards 
         st.markdown('<div class="section-label">Per-strategy breakdown</div>',
                     unsafe_allow_html=True)
 
@@ -706,10 +693,9 @@ with tab_eval:
                 </div>
                 """, unsafe_allow_html=True)
 
-        #  Latency vs Quality scatter 
+        # Latency vs Quality scatter 
         if has_scores:
-            st.markdown('<div class="section-label">Latency vs faithfulness tradeoff</div>',
-                        unsafe_allow_html=True)
+            st.markdown('<div class="section-label">Latency vs faithfulness tradeoff</div>', unsafe_allow_html=True)
             scatter_fig = go.Figure()
             for strat, row in rows:
                 meta = STRATEGY_META.get(strat, {})
@@ -738,8 +724,7 @@ with tab_eval:
                 plot_bgcolor="rgba(0,0,0,0)",
                 font=dict(color="#94a3b8", size=11),
                 xaxis=dict(title="Avg Latency (ms)", gridcolor="#1e293b", showgrid=True),
-                yaxis=dict(title="Faithfulness", range=[0, 1.1],
-                           gridcolor="#1e293b", showgrid=True),
+                yaxis=dict(title="Faithfulness", range=[0, 1.1], gridcolor="#1e293b", showgrid=True),
                 annotations=[dict(
                     x=0.02, y=0.98, xref="paper", yref="paper",
                     text="↑ better quality", showarrow=False,
@@ -749,11 +734,9 @@ with tab_eval:
             st.plotly_chart(scatter_fig, width='stretch')
             st.caption("Top-left = fast AND faithful. Top-right = faithful but slow.")
 
-        #  Load CSV for per-question drill-down 
-        st.markdown('<div class="section-label">Per-question drill-down</div>',
-                    unsafe_allow_html=True)
-        csv_files = sorted(Path("core/evaluation/results").glob("eval_per_question_*.csv"),
-                           reverse=True) if Path("core/evaluation/results").exists() else []
+        # Load CSV for per-question drill-down 
+        st.markdown('<div class="section-label">Per-question drill-down</div>', unsafe_allow_html=True)
+        csv_files = sorted(Path("core/evaluation/results").glob("eval_per_question_*.csv"), reverse=True) if Path("core/evaluation/results").exists() else []
         if csv_files:
             df = pd.read_csv(csv_files[0])
             filter_strat = st.selectbox(
@@ -802,9 +785,8 @@ with tab_status:
         else:
             st.warning("Qdrant status unknown")
 
-    #  Collections table 
-    st.markdown('<div class="section-label">Qdrant collections</div>',
-                unsafe_allow_html=True)
+    # Collections table 
+    st.markdown('<div class="section-label">Qdrant collections</div>', unsafe_allow_html=True)
 
     if col_data:
         col_rows = []
@@ -818,8 +800,7 @@ with tab_status:
         st.dataframe(pd.DataFrame(col_rows), width='stretch', hide_index=True)
 
     # Strategy descriptions
-    st.markdown('<div class="section-label">Strategy reference</div>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Strategy reference</div>',  unsafe_allow_html=True)
 
     strat_data = api_get("/strategies")
     if strat_data:

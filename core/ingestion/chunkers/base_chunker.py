@@ -34,7 +34,7 @@ class Chunk:
     metadata: dict = field(default_factory=dict)
 
     def __post_init__(self):
-        # Rough token estimate: 1 token ≈ 4 characters (OpenAI rule of thumb)
+        # Rough token estimate: 1 token ≈ 4 characters
         self.token_count = len(self.text) // 4
 
     def to_payload(self) -> dict:

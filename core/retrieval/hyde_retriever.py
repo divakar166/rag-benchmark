@@ -1,12 +1,12 @@
 """
-HyDE Retriever — Strategy 5 (Hypothetical Document Embeddings).
+HyDE Retriever (Hypothetical Document Embeddings)
 
 Paper: "Precise Zero-Shot Dense Retrieval without Relevance Labels" (Gao et al., 2022)
 
 How it works:
   1. Take the user's query
   2. Ask the LLM: "Write a short passage that would answer this question"
-  3. Embed the HYPOTHETICAL PASSAGE (not the query)
+  3. Embed the HYPOTHETICAL PASSAGE
   4. Search Qdrant with that embedding
   5. Return the real chunks nearest to the hypothesis
 
@@ -31,17 +31,13 @@ Architecture note:
 """
 import time
 from loguru import logger
-from openai import AsyncOpenAI
 
 from config import settings
 from core.ingestion.embedder import embed_query
 from vectordb.qdrant_client import qdrant_manager
+from core.generation.llm_client import get_llm_client
 
-# NVIDIA NIM client (same as generator.py) 
-_client = AsyncOpenAI(
-    api_key=settings.llm_api_key,
-    base_url=settings.llm_base_url,
-)
+_client = get_llm_client()
 
 # HyDE prompt 
 HYDE_SYSTEM_PROMPT = """You are a document writing assistant.
@@ -104,7 +100,7 @@ async def retrieve_hyde(
     # Step 1: generate a hypothetical answer passage
     hypothesis, hypothesis_latency_ms = await _generate_hypothesis(query)
 
-    # Step 2: embed the hypothesis (not the raw query)
+    # Step 2: embed the hypothesis
     hypothesis_vector = await embed_query(hypothesis)
 
     # Step 3: search Qdrant with the hypothesis vector

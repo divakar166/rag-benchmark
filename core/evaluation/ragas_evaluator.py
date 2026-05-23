@@ -1,5 +1,5 @@
 """
-RAGAS Evaluator — Phase 3.
+RAGAS Evaluator
 
 Tested against ragas==0.4.3.
 
@@ -25,7 +25,7 @@ import math
 import httpx
 import pandas as pd
 from loguru import logger
-from openai import AsyncOpenAI
+from core.generation.llm_client import get_llm_client
 
 from ragas.metrics.collections import Faithfulness, ContextPrecision, ContextRecall
 from ragas.metrics.collections.answer_relevancy import AnswerRelevancy
@@ -75,12 +75,9 @@ class FakeOpenAIEmbeddingsClient:
 
 
 def _get_ragas_llm():
-    """RAGAS 0.4.3: use llm_factory() with AsyncOpenAI client pointed at NVIDIA NIM."""
-    nim_client = AsyncOpenAI(
-        api_key=settings.llm_api_key,
-        base_url=settings.llm_base_url,
-    )
-    return llm_factory(settings.llm_model, client=nim_client)
+    """RAGAS 0.4.3: use llm_factory() with AsyncOpenAI client."""
+    client = get_llm_client()
+    return llm_factory(settings.llm_model, client=client)
 
 
 def _get_ragas_embeddings() -> OpenAIEmbeddings:
@@ -96,7 +93,7 @@ def _get_ragas_embeddings() -> OpenAIEmbeddings:
     return OpenAIEmbeddings(client=fake_client, model=settings.embedding_model)
 
 
-#  Per-strategy retrieval dispatch 
+# Per-strategy retrieval dispatch 
 async def _retrieve_for_strategy(
     query: str,
     strategy: str,
@@ -130,7 +127,7 @@ async def _retrieve_for_strategy(
     raise ValueError(f"Unknown strategy: {strategy}")
 
 
-#  Question set runner ─
+# Question set runner
 async def _run_strategy_on_question_set(
     strategy: str,
     questions: list[dict],
@@ -197,7 +194,7 @@ async def _score_with_ragas(rows: list[dict]) -> dict:
         r for r in rows
         if r.get("response") 
         and not str(r.get("response", "")).startswith("ERROR")
-        and r.get("retrieved_contexts")  # must have contexts
+        and r.get("retrieved_contexts")
     ]
 
     skipped = len(rows) - len(valid_rows)

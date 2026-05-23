@@ -1,12 +1,12 @@
-# 🔬 RAG Strategy Benchmarker
+# RAG Strategy Benchmarker
 
 A production-grade POC for comparing, evaluating, and benchmarking different RAG (Retrieval-Augmented Generation) strategies side by side.
 
-Built with: **FastAPI · Qdrant · OpenAI · Streamlit · RAGAS**
+Built with: **FastAPI · Qdrant · OpenAI / Custom LLM (vLLM) · Streamlit · RAGAS**
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ```
 User uploads PDF
@@ -14,11 +14,11 @@ User uploads PDF
    PDF Loader (pdfplumber)
        ↓
   Chunking Strategy ──────────────────────────────────────────────┐
-  ┌─────────────┬──────────────┬──────────────┬──────────────┐   │
-  │ Naive Fixed │   Semantic   │ Hierarchical │    Hybrid    │ HyDE
-  └─────────────┴──────────────┴──────────────┴──────────────┘   │
+  ┌─────────────┬──────────────┬──────────────┬──────────────┐    │
+  │ Naive Fixed │   Semantic   │ Hierarchical │    Hybrid    │   HyDE
+  └─────────────┴──────────────┴──────────────┴──────────────┘    │
        ↓                                                          │
-  OpenAI Embeddings (text-embedding-3-small)                      │
+   Embeddings (BAAI/bge-small-en-v1.5 / OpenAI)                   │
        ↓                                                          │
   Qdrant (separate collection per strategy) ◄─────────────────────┘
        ↓
@@ -26,29 +26,27 @@ User uploads PDF
        ↓
   Retrieval (dense / hybrid / HyDE)
        ↓
-  GPT-4o-mini generates answer
+  Modular LLM Client (OpenAI GPT / Custom vLLM / Qwen) generates answer
        ↓
   RAGAS evaluation (faithfulness, relevancy, precision, recall)
        ↓
-  Streamlit dashboard — side-by-side comparison
+  Streamlit dashboard
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone & setup environment
 
 ```bash
-git clone https://github.com/yourusername/rag-benchmark
+git clone https://github.com/divakar166/rag-benchmark.git
 cd rag-benchmark
 
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+uv sync
 
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and set your LLM_PROVIDER to "openai" or "custom"
 ```
 
 ### 2. Start Qdrant with Docker
@@ -78,7 +76,54 @@ streamlit run ui/app.py
 
 ---
 
-## 📡 API Reference
+## Docker Compose Setup
+
+The project ships with a `docker-compose.yml` that orchestrates three services:
+
+| Service           | Container           | Port(s)        | Description                                                             |
+| ----------------- | ------------------- | -------------- | ----------------------------------------------------------------------- |
+| **qdrant**        | `rag_qdrant`        | `6333`, `6334` | Qdrant vector database (REST + gRPC)                                    |
+| **embedding-api** | `rag_embedding_api` | `8001`         | Lightweight FastAPI server running fastembed (`BAAI/bge-small-en-v1.5`) |
+| **api**           | `rag_api`           | `8000`         | Main FastAPI backend (ingestion, retrieval, generation, evaluation)     |
+
+### Run the full stack
+
+```bash
+# Start all services (Qdrant + Embedding API + FastAPI backend)
+docker compose up -d
+
+# Verify everything is healthy
+curl http://localhost:6333/healthz   # Qdrant
+curl http://localhost:8001/health    # Embedding API
+curl http://localhost:8000/health    # FastAPI backend
+```
+
+### Run individual services
+
+```bash
+# Only Qdrant (recommended during local development)
+docker compose up qdrant -d
+
+# Qdrant + Embedding API (run backend locally with uvicorn)
+docker compose up qdrant embedding-api -d
+```
+
+### Persistent volumes
+
+| Volume            | Purpose                            |
+| ----------------- | ---------------------------------- |
+| `qdrant_storage`  | Qdrant collections & vector data   |
+| `embedding_cache` | Downloaded embedding model weights |
+
+### Rebuild after code changes
+
+```bash
+docker compose up -d --build
+```
+
+---
+
+## API Reference
 
 | Method | Endpoint       | Description                  |
 | ------ | -------------- | ---------------------------- |
@@ -111,61 +156,71 @@ curl -X POST http://localhost:8000/query \
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 rag-benchmark/
-├── core/
+├── core/                                ← Core RAG logic
 │   ├── ingestion/
 │   │   ├── chunkers/
-│   │   │   ├── base_chunker.py         ← Abstract interface
-│   │   │   ├── fixed_chunker.py        ← ✅ Phase 1: Naive baseline
-│   │   │   ├── semantic_chunker.py     ← 🔜 Phase 2
-│   │   │   └── hierarchical_chunker.py ← 🔜 Phase 2
+│   │   │   ├── base_chunker.py          ← Abstract chunker interface
+│   │   │   ├── fixed_chunker.py         ← Naive fixed-window baseline
+│   │   │   ├── semantic_chunker.py      ← Embedding-similarity breakpoints
+│   │   │   └── hierarchical_chunker.py  ← Parent / child chunking
 │   │   ├── pdf_loader.py               ← pdfplumber + pypdf fallback
-│   │   ├── embedder.py                 ← OpenAI batched + cached
+│   │   ├── embedder.py                 ← HTTP client for embedding-api
 │   │   └── pipeline.py                 ← Orchestrates full ingestion
 │   ├── retrieval/
-│   │   ├── dense_retriever.py          ← ✅ Phase 1: cosine search
-│   │   ├── hybrid_retriever.py         ← 🔜 Phase 2: BM25 + dense
-│   │   └── hyde_retriever.py           ← 🔜 Phase 2: HyDE
+│   │   ├── dense_retriever.py           ← Dense cosine search
+│   │   ├── hybrid_retriever.py          ← BM25 + dense via RRF
+│   │   └── hyde_retriever.py            ← Hypothetical Document Embeddings
 │   ├── generation/
-│   │   └── generator.py                ← GPT-4o-mini answer generation
+│   │   ├── llm_client.py               ← Modular LLM client factory
+│   │   └── generator.py                ← LLM answer generation
 │   └── evaluation/
-│       └── ragas_evaluator.py          ← 🔜 Phase 3
+│       ├── ragas_evaluator.py           ← RAGAS metric evaluation
+│       ├── benchmark_runner.py          ← Batch benchmark runner
+│       ├── question_set.json            ← Predefined evaluation questions
+│       └── results/                     ← CSV & JSON evaluation outputs
 ├── api/
-│   └── main.py                         ← FastAPI routes
+│   └── main.py                          ← FastAPI routes
+├── embedding-api/                       ← Standalone embedding microservice
+│   ├── server.py                        ← FastAPI server (fastembed)
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── vectordb/
-│   └── qdrant_client.py                ← Qdrant wrapper
+│   └── qdrant_client.py                 ← Qdrant wrapper
 ├── ui/
-│   └── app.py                          ← Streamlit dashboard
+│   └── app.py                           ← Streamlit dashboard
 ├── tests/
-│   └── ...                             ← 🔜 Phase 3
+│   └── ...
 ├── data/
-│   ├── uploads/                        ← Uploaded PDFs (gitignored)
-│   └── sample_pdfs/                    ← Test PDFs
-├── docker-compose.yml
-├── Dockerfile
+│   └── uploads/                         ← Uploaded PDFs (gitignored)
+├── modal_vllm.py                        ← Modal cloud vLLM deployment
+├── docker-compose.yml                   ← Multi-service Docker setup
+├── Dockerfile                           ← API service image
+├── config.py                            ← Pydantic settings & defaults
+├── pyproject.toml
 ├── requirements.txt
-├── config.py
+├── requirements-api.txt                 ← Slim deps for Docker API image
 └── .env.example
 ```
 
 ---
 
-## 🧠 RAG Strategies
+## RAG Strategies
 
-| #   | Strategy         | Chunking                                  | Retrieval                       | Status     |
-| --- | ---------------- | ----------------------------------------- | ------------------------------- | ---------- |
-| 1   | **Naive RAG**    | Fixed token windows                       | Dense cosine                    | ✅ Phase 1 |
-| 2   | **Semantic**     | Sentence embedding similarity breakpoints | Dense cosine                    | 🔜 Phase 2 |
-| 3   | **Hierarchical** | Parent (1024 tok) + Child (256 tok)       | Dense on child, return parent   | 🔜 Phase 2 |
-| 4   | **Hybrid**       | Fixed (same as naive)                     | BM25 + Dense via RRF            | 🔜 Phase 2 |
-| 5   | **HyDE**         | Fixed (same as naive)                     | Embed hypothetical answer first | 🔜 Phase 2 |
+| #   | Strategy         | Chunking                                  | Retrieval                       |
+| --- | ---------------- | ----------------------------------------- | ------------------------------- |
+| 1   | **Naive RAG**    | Fixed token windows                       | Dense cosine                    |
+| 2   | **Semantic**     | Sentence embedding similarity breakpoints | Dense cosine                    |
+| 3   | **Hierarchical** | Parent (1024 tok) + Child (256 tok)       | Dense on child, return parent   |
+| 4   | **Hybrid**       | Fixed (same as naive)                     | BM25 + Dense via RRF            |
+| 5   | **HyDE**         | Fixed (same as naive)                     | Embed hypothetical answer first |
 
 ---
 
-## 📊 Evaluation Metrics (Phase 3)
+## Evaluation Metrics
 
 | Metric            | Measures            | Tool   |
 | ----------------- | ------------------- | ------ |
@@ -178,29 +233,27 @@ rag-benchmark/
 
 ---
 
-## 🗺 Roadmap
+## Environment Variables
 
-- [x] **Phase 1** — Naive RAG baseline (PDF → Fixed chunks → Qdrant → GPT-4o-mini)
-- [ ] **Phase 2** — Semantic, Hierarchical, Hybrid (BM25+Dense), HyDE strategies
-- [ ] **Phase 3** — RAGAS evaluation, benchmark runner, results CSV export
-- [ ] **Phase 4** — Polish UI, live score charts, deploy to Railway/VPS
-
----
-
-## 🔑 Environment Variables
-
-| Variable         | Required | Default     | Description                |
-| ---------------- | -------- | ----------- | -------------------------- |
-| `OPENAI_API_KEY` | ✅       | —           | OpenAI API key             |
-| `QDRANT_HOST`    | ❌       | `localhost` | Qdrant host                |
-| `QDRANT_PORT`    | ❌       | `6333`      | Qdrant REST port           |
-| `CHUNK_SIZE`     | ❌       | `512`       | Tokens per chunk (naive)   |
-| `CHUNK_OVERLAP`  | ❌       | `64`        | Overlap tokens             |
-| `TOP_K`          | ❌       | `5`         | Chunks retrieved per query |
+| Variable          | Default                          | Description                                              |
+| ----------------- | -------------------------------- | -------------------------------------------------------- |
+| `LLM_PROVIDER`    | `custom`                         | LLM client provider (`custom` or `openai`)               |
+| `LLM_MODEL`       | `Qwen/Qwen2.5-Coder-7B-Instruct` | The LLM model identifier                                 |
+| `OPENAI_API_KEY`  | —                                | Standard OpenAI API Key (when `LLM_PROVIDER=openai`)     |
+| `LLM_API_KEY`     | `dummy`                          | API Key for custom self-hosted LLM                       |
+| `LLM_BASE_URL`    | `http://localhost:8002/v1`       | Base URL for custom OpenAI-compatible LLM endpoint       |
+| `EMBEDDING_HOST`  | `http://localhost:8001`          | Embedding API base URL                                   |
+| `EMBEDDING_MODEL` | `BAAI/bge-small-en-v1.5`         | Embedding model name                                     |
+| `QDRANT_HOST`     | `localhost`                      | Qdrant database host                                     |
+| `QDRANT_PORT`     | `6333`                           | Qdrant REST port                                         |
+| `HF_TOKEN`        | —                                | Hugging Face token (optional, for gated model downloads) |
+| `CHUNK_SIZE`      | `512`                            | Tokens per chunk (naive)                                 |
+| `CHUNK_OVERLAP`   | `64`                             | Overlap tokens                                           |
+| `TOP_K`           | `5`                              | Chunks retrieved per query                               |
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 PRs welcome. Each new strategy should:
 

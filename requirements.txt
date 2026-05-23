@@ -1,45 +1,40 @@
 # Core
-fastapi
-uvicorn[standard]
-python-multipart
-pydantic
-pydantic-settings
+fastapi==0.136.1
+uvicorn[standard]==0.47.0
+python-multipart==0.0.28
+pydantic==2.13.4
+pydantic-settings==2.14.1
 
 # Vector DB
-qdrant-client
+qdrant-client==1.18.0
 
 # PDF Processing
-pypdf
-pdfplumber
+pypdf==6.11.0
+pdfplumber==0.11.9
 
-openai
-tiktoken
+openai==2.36.0
+tiktoken==0.13.0
 
 # Chunking / NLP
-sentence-transformers
-nltk
-spacy
+sentence-transformers==5.5.0
+nltk==3.9.4
+spacy==3.8.14
 
-# Hybrid Search (BM25) - Phase 2
-rank-bm25
+# Hybrid Search (BM25)
+rank-bm25==0.2.2
 
-# Evaluation - Phase 3
-ragas
-datasets
+# Evaluation
+ragas==0.4.3
 
 # Utilities
-python-dotenv
-numpy
-pandas
-httpx
-tenacity
-loguru
-tqdm
+python-dotenv==1.2.2
+numpy==2.4.4
+pandas==3.0.3
+httpx==0.28.1
+tenacity==9.1.4
+loguru==0.7.3
+tqdm==4.67.3
 
 # UI
-streamlit
-plotly
-
-rank-bm25
-nltk
-numpy
+streamlit==1.57.0
+plotly==6.7.0

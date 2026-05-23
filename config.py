@@ -5,11 +5,13 @@ import os
 
 
 class Settings(BaseSettings):
+    llm_provider: Literal["openai", "custom"] = Field(default="custom", alias="LLM_PROVIDER")
     llm_api_key: str = Field(default="dummy", alias="LLM_API_KEY")
     llm_base_url: str = Field(default="http://localhost:8002/v1", alias="LLM_BASE_URL")
     llm_model: str = Field(default="Qwen/Qwen2.5-Coder-7B-Instruct", alias="LLM_MODEL")
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
 
-    hf_token: str = Field(..., env="HF_TOKEN")
+    hf_token: str = Field(default="", env="HF_TOKEN")
 
     # Ollama (Embeddings) 
     embedding_host: str = Field(default="http://localhost:11434", env="EMBEDDING_HOST")

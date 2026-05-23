@@ -1,5 +1,5 @@
 """
-Hybrid Retriever — Strategy 4.
+Hybrid Retriever
 
 How it works:
   1. Run BM25 (keyword) search over all stored chunk texts (in-memory index)
@@ -30,7 +30,7 @@ from core.ingestion.embedder import embed_query
 from vectordb.qdrant_client import qdrant_manager
 
 
-#  BM25 index cache — keyed by collection name 
+# BM25 index cache — keyed by collection name 
 _bm25_cache: dict[str, tuple[BM25Okapi, list[dict]]] = {}
 
 
@@ -127,7 +127,7 @@ def _reciprocal_rank_fusion(
     fused = []
     for cid in sorted_ids:
         chunk = dict(chunk_map[cid])
-        chunk["score"] = round(rrf_scores[cid], 6)   # replace raw score with RRF score
+        chunk["score"] = round(rrf_scores[cid], 6)
         fused.append(chunk)
 
     return fused
@@ -148,7 +148,7 @@ async def retrieve_hybrid(
     """
     logger.debug(f"Hybrid retrieve — query='{query[:60]}...'")
 
-    #  Dense retrieval 
+    # Dense retrieval 
     query_vector = await embed_query(query)
     dense_results = qdrant_manager.search(
         collection_name=collection_name,

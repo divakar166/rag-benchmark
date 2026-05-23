@@ -29,7 +29,6 @@ class QdrantManager:
         )
 
     # Collection management 
-
     def create_collection(
         self,
         collection_name: str,
@@ -61,7 +60,7 @@ class QdrantManager:
             self.client.delete_collection(collection_name)
             logger.info(f"Collection '{collection_name}' deleted.")
         except Exception:
-            pass  # Doesn't exist, that's fine
+            pass
 
     def collection_exists(self, collection_name: str) -> bool:
         collections = self.client.get_collections().collections
@@ -78,7 +77,6 @@ class QdrantManager:
         }
 
     # Write operations
-
     def upsert_chunks(
         self,
         collection_name: str,
@@ -106,7 +104,6 @@ class QdrantManager:
         return len(points)
 
     # Read / Search operations
-
     def search(
         self,
         collection_name: str,
@@ -147,7 +144,7 @@ class QdrantManager:
     def fetch_by_ids(
         self, collection_name: str, ids: list[int | str]
     ) -> list[dict]:
-        """Fetch points by IDs (used for parent-child retrieval in Phase 2)."""
+        """Fetch points by IDs (used for parent-child retrieval)."""
         results = self.client.retrieve(
             collection_name=collection_name,
             ids=ids,

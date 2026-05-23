@@ -1,5 +1,5 @@
 """
-Fixed Chunker — Strategy 1: Naive RAG Baseline.
+Fixed Chunker — Naive RAG Baseline
 
 Splits text into fixed-size token windows with overlap.
 This is the simplest possible approach and intentionally the weakest —
@@ -21,7 +21,7 @@ class FixedChunker(BaseChunker):
     """
     Splits each page's text into overlapping fixed-size windows.
 
-    Token estimation: 1 token ≈ 4 characters (OpenAI rule of thumb).
+    Token estimation: 1 token ≈ 4 characters.
     We work in characters internally and convert at boundaries.
     """
 

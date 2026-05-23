@@ -8,16 +8,11 @@ The prompt is engineered for RAG:
 """
 import time
 from loguru import logger
-from openai import AsyncOpenAI
 from config import settings
+from core.generation.llm_client import get_llm_client
 
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from openai import RateLimitError
 
-_client = AsyncOpenAI(
-    api_key=settings.llm_api_key,
-    base_url=settings.llm_base_url,
-)
+_client = get_llm_client()
 
 # Prompt template
 SYSTEM_PROMPT = """You are a precise question-answering assistant.

@@ -1,5 +1,5 @@
 """
-FastAPI Application — RAG Benchmark POC (Phase 2)
+FastAPI Application — RAG Benchmark
 
 Endpoints:
     POST /ingest          — Upload a PDF and ingest it for one or all strategies
@@ -26,7 +26,7 @@ from core.generation.generator import generate_answer
 from vectordb.qdrant_client import qdrant_manager
 
 
-#  App setup 
+# App setup 
 app = FastAPI(
     title="RAG Strategy Benchmarker",
     description="Compare Naive, Semantic, Hierarchical, Hybrid, and HyDE RAG strategies",
@@ -44,7 +44,7 @@ app.add_middleware(
 ALL_QUERY_STRATEGIES = ["naive", "semantic", "hierarchical", "hybrid", "hyde"]
 
 
-#  Request / Response models 
+# Request / Response models 
 class QueryRequest(BaseModel):
     query: str
     strategy: str = "all"
@@ -218,7 +218,7 @@ async def _run_strategy(query: str, strategy: str, top_k: int) -> StrategyResult
     """Dispatch to the right retriever based on strategy name."""
     extra = {}
 
-    #  Collection readiness check 
+    # Collection readiness check 
     def _not_ingested(strategy_name: str) -> StrategyResult:
         return StrategyResult(
             strategy=strategy_name,
@@ -227,19 +227,19 @@ async def _run_strategy(query: str, strategy: str, top_k: int) -> StrategyResult
             prompt_tokens=0, completion_tokens=0, retrieval_scores=[],
         )
 
-    #  Naive 
+    # Naive 
     if strategy == "naive":
         if not qdrant_manager.collection_exists(settings.collection_naive):
             return _not_ingested(strategy)
         chunks = await retrieve(query, settings.collection_naive, top_k)
 
-    #  Semantic 
+    # Semantic 
     elif strategy == "semantic":
         if not qdrant_manager.collection_exists(settings.collection_semantic):
             return _not_ingested(strategy)
         chunks = await retrieve(query, settings.collection_semantic, top_k)
 
-    #  Hierarchical 
+    # Hierarchical 
     elif strategy == "hierarchical":
         if not qdrant_manager.collection_exists(settings.collection_hierarchical_small):
             return _not_ingested(strategy)
@@ -271,13 +271,13 @@ async def _run_strategy(query: str, strategy: str, top_k: int) -> StrategyResult
         extra["child_chunks_searched"] = len(child_chunks)
         extra["parent_chunks_fetched"] = len(chunks)
 
-    #  Hybrid 
+    # Hybrid 
     elif strategy == "hybrid":
         if not qdrant_manager.collection_exists(settings.collection_hybrid):
             return _not_ingested(strategy)
         chunks = await retrieve_hybrid(query, settings.collection_hybrid, top_k)
 
-    #  HyDE 
+    # HyDE 
     elif strategy == "hyde":
         if not qdrant_manager.collection_exists(settings.collection_naive):
             return _not_ingested(strategy)
@@ -315,12 +315,9 @@ async def evaluate_endpoint(request: EvaluateRequest):
 
     This is a long-running operation (~10-20 min for all strategies × 10 questions).
     Triggers retrieval + generation for every question × strategy combination,
-    then scores with RAGAS using NVIDIA NIM as judge.
+    then scores with RAGAS using LLM as judge.
 
     Returns a summary with RAGAS scores per strategy + paths to saved results.
-
-    Tip: run with a subset of strategies first to check everything works:
-        {"strategies": ["naive", "semantic"], "top_k": 5}
     """
     from core.evaluation.ragas_evaluator import run_evaluation
 

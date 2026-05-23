@@ -2,10 +2,10 @@
 Dense Retriever — cosine similarity search against a Qdrant collection.
 
 Used by:
-  - Naive RAG (Phase 1)
-  - Semantic chunking (Phase 2)
-  - Hierarchical RAG (Phase 2) — retrieves child chunks, fetches parents
-  - HyDE (Phase 2) — same retriever, different query vector
+  - Naive RAG
+  - Semantic chunking
+  - Hierarchical RAG — retrieves child chunks, fetches parents
+  - HyDE — same retriever, different query vector
 """
 from loguru import logger
 

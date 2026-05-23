@@ -1,5 +1,5 @@
 """
-Ingestion Pipeline — Phase 2.
+Ingestion Pipeline
 
 Orchestrates the full ingestion flow for each strategy:
     PDF → PageDocs → Chunks → Embeddings → Qdrant
@@ -23,10 +23,8 @@ from core.ingestion.chunkers.semantic_chunker import SemanticChunker
 from core.ingestion.chunkers.hierarchical_chunker import HierarchicalChunker
 from vectordb.qdrant_client import qdrant_manager
 
-
-# Strategy registry 
+# Strategy registry
 # Maps strategy name → (chunker class, qdrant collection name)
-# Hierarchical is NOT here — it's handled separately (two collections)
 STRATEGY_REGISTRY: dict[str, tuple[Type[BaseChunker], str]] = {
     "naive":        (FixedChunker,    settings.collection_naive),
     "semantic":     (SemanticChunker, settings.collection_semantic),
@@ -59,7 +57,7 @@ async def _embed_and_store(
         batch = texts[start: start + EMBED_BATCH_SIZE]
         vectors = await embed_texts(batch)
         all_vectors.extend(vectors)
-        logger.debug(f"  Embedded chunks {start}–{start + len(batch)}")
+        logger.debug(f"  Embedded chunks {start}-{start + len(batch)}")
 
     # Upsert
     points = [
@@ -87,22 +85,22 @@ async def ingest_pdf(
     path = Path(file_path)
     logger.info(f" Ingestion START  strategy={strategy}, file={path.name}")
 
-    #  Load PDF 
+    # Load PDF 
     pages: list[PageDoc] = load_pdf(path)
-    logger.info(f"Step 1 ✓ Loaded {len(pages)} pages")
+    logger.info(f"Step 1 | Loaded {len(pages)} pages")
 
-    #  Hierarchical: special dual-collection path 
+    # Hierarchical: special dual-collection path 
     if strategy == "hierarchical":
         return await _ingest_hierarchical(pages, path.name, recreate_collection)
 
-    #  Standard path (naive / semantic / hybrid / hyde) 
+    # Standard path (naive / semantic / hybrid / hyde) 
     if strategy not in STRATEGY_REGISTRY:
         raise ValueError(
             f"Unknown strategy '{strategy}'. "
             f"Available: {list(STRATEGY_REGISTRY.keys()) + ['hierarchical']}"
         )
 
-    # hyde reuses naive's collection — no separate ingestion needed-
+    # hyde reuses naive's collection — no separate ingestion needed
     if strategy == "hyde":
         logger.info(
             "HyDE reuses the naive collection — "
@@ -117,15 +115,15 @@ async def ingest_pdf(
 
     chunker_class, collection_name = STRATEGY_REGISTRY[strategy]
 
-    #  Chunk 
+    # Chunk 
     chunker: BaseChunker = chunker_class()
     chunks: list[Chunk] = await chunker.chunk(pages)
-    logger.info(f"Step 2 ✓ Created {len(chunks)} chunks")
+    logger.info(f"Step 2 | Created {len(chunks)} chunks")
 
-    #  Embed + Store 
-    logger.info(f"Step 3 — Embedding + storing {len(chunks)} chunks...")
+    # Embed + Store 
+    logger.info(f"Step 3 | Embedding + storing {len(chunks)} chunks...")
     stored = await _embed_and_store(chunks, collection_name, recreate=recreate_collection)
-    logger.info(f"Step 3 ✓ Stored {stored} points in '{collection_name}'")
+    logger.info(f"Step 3 | Stored {stored} points in '{collection_name}'")
 
     summary = {
         "strategy": strategy,
@@ -158,31 +156,31 @@ async def _ingest_hierarchical(
 
     # Step 1: produce parents
     parents = await chunker.chunk(pages)
-    logger.info(f"Step 2 ✓ Created {len(parents)} parent chunks")
+    logger.info(f"Step 2 | Created {len(parents)} parent chunks")
 
     # Step 2: produce children (IDs start after parents)
     children = chunker.chunk_children(parents)
-    logger.info(f"Step 2 ✓ Created {len(children)} child chunks")
+    logger.info(f"Step 2 | Created {len(children)} child chunks")
 
     # Step 3: embed + store parents
-    logger.info("Step 3a — Storing parent chunks...")
+    logger.info("Step 3a | Storing parent chunks...")
     parents_stored = await _embed_and_store(
         parents,
         settings.collection_hierarchical_large,
         recreate=recreate,
         id_offset=0,
     )
-    logger.info(f"Step 3a ✓ Stored {parents_stored} parents")
+    logger.info(f"Step 3a | Stored {parents_stored} parents")
 
     # Step 4: embed + store children
-    logger.info("Step 3b — Storing child chunks...")
+    logger.info("Step 3b | Storing child chunks...")
     children_stored = await _embed_and_store(
         children,
         settings.collection_hierarchical_small,
         recreate=recreate,
         id_offset=len(parents),  # ensures unique IDs
     )
-    logger.info(f"Step 3b ✓ Stored {children_stored} children")
+    logger.info(f"Step 3b | Stored {children_stored} children")
 
     summary = {
         "strategy": "hierarchical",

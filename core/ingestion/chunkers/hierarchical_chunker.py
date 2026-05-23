@@ -1,12 +1,11 @@
 """
-Hierarchical Chunker — Strategy 3.
+Hierarchical Chunker
 
 How it works:
   1. Split text into PARENT chunks (large, ~1024 tokens) — these go to the LLM
   2. Split each parent into CHILD chunks (small, ~256 tokens) — these are searched
   3. Each child stores a `parent_id` pointing to its parent's chunk_index
-  4. At retrieval time: search children for precision,
-     then fetch parent chunks to give the LLM full context
+  4. At retrieval time: search children for precision, then fetch parent chunks to give the LLM full context
 
 Why it beats Naive:
   - Small child chunks → high retrieval precision (less noise per chunk)
@@ -90,13 +89,12 @@ class HierarchicalChunker(BaseChunker):
 
         logger.info(
             f"HierarchicalChunker initialised — "
-            f"parent={parent_chunk_size} tok, child={child_chunk_size} tok"
+            f"parent={parent_chunk_size} tokens, child={child_chunk_size} tokens, overlap={overlap_tokens} tokens"
         )
 
     async def chunk(self, pages: list[PageDoc]) -> list[Chunk]:
         """
-        Step 1: produce parent chunks (async to match BaseChunker interface
-        used by pipeline.py with `await chunker.chunk(pages)`).
+        Step 1: produce parent chunks
         These are stored in rag_hierarchical_large and sent to the LLM.
         """
         parents: list[Chunk] = []
@@ -122,8 +120,6 @@ class HierarchicalChunker(BaseChunker):
         """
         Step 2: split each parent into children (sync — no embedding needed here).
         Children are stored in rag_hierarchical_small for dense search.
-        Each child's `parent_id` points to the parent's chunk_index so
-        main.py can fetch the parent after retrieving a child.
 
         Child IDs start at len(parents) to avoid collision with parent IDs
         across both Qdrant collections.
