@@ -52,7 +52,7 @@ vllm_image = (
     scaledown_window=1 * MINUTES,   # stay warm 5 min after last request
     max_containers=1,
 )
-@modal.concurrent(max_inputs=32)    # how many requests one replica handles concurrently
+@modal.concurrent(max_inputs=8)    # how many requests one replica handles concurrently
 @modal.web_server(port=VLLM_PORT, startup_timeout=10 * MINUTES)
 def serve():
     import os
@@ -62,15 +62,17 @@ def serve():
 
     cmd = [
         "vllm", "serve", MODEL_NAME,
+
         "--revision", MODEL_REVISION,
         "--served-model-name", MODEL_NAME,
 
         "--host", "0.0.0.0",
         "--port", str(VLLM_PORT),
 
-        "--max-model-len", "8192",
-        "--gpu-memory-utilization", "0.90",
-        "--enforce-eager",
+        "--max-model-len", "12288",
+        "--gpu-memory-utilization", "0.85",
+
+        "--max-num-seqs", "8",
 
         "--api-key", api_key,
     ]
